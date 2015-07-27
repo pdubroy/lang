@@ -25,12 +25,37 @@
   <script src="third_party/underscore.js"></script>
   <script type="text/ohm-js" src="es5.ohm"></script>
   <script>
-    var lang = ohm.grammarsFromScriptElements().ES5;
-
     var editor = CodeMirror.fromTextArea(document.querySelector('textarea'), {
       lineNumbers: true
     });
     setEditorValueFromLocalStorage(editor, 'editorContents');
+
+    var es5 = ohm.grammarsFromScriptElements().ES5;
+    var semantics = es5.semantics();
+
+    // An operation that returns the parse tree node that contains the cursor.
+    semantics.addOperation('getEditedNode', {
+      _default: function(children) {
+        var cursorOffset = editor.indexFromPos(editor.getCursor());
+        for (var i = 0; i < children.length; ++i) {
+          var c = children[i];
+          // Only recurse into children that contain the cursor.
+          if (c.interval.startIdx <= cursorOffset && cursorOffset <= c.interval.endIdx) {
+            return c.ctorName === '_terminal' ? this : c.getEditedNode();
+          }
+        }
+      }
+    });
+
+    // An operation that returns an Array of all the numericLiteral nodes.
+    semantics.addOperation('getNumbers', {
+      numericLiteral: function(_) {
+        return [this.interval.contents];
+      },
+      _default: function(children) {
+        return _.flatten(children.map(function(c) { return c.getNumbers(); }));
+      }
+    });
 
     function setEditorValueFromLocalStorage(editor, key) {
       var contents = localStorage.getItem(key);
@@ -40,19 +65,29 @@
     }
 
     function reparse() {
-      var result = lang.match(editor.getValue());
-      if (result.succeeded()) {
-        console.log('\u2713 ' + lang.name);
-      } else {
+      var result = es5.match(editor.getValue());
+      if (result.failed()) {
         console.error(result.message);
+        return;
+      }
+      var node = semantics(result).getEditedNode();
+      if (node) {
+        // Get all the numbers inside the block that just closed.
+        var numbers = node.getNumbers();
+
+        // Fun stuff goes here!
       }
     }
 
-    editor.on('change', _.debounce(function(cm) {
+    editor.on('change', function(cm, change) {
       var val = cm.getValue();
       localStorage.setItem('editorContents', val);
-      reparse();
-    }, 300));
+      var text = change.text.join('');
+      if (text === '}' || text === ')') {
+        reparse();
+      }
+    });
+
     setTimeout(reparse, 10);
   </script>
 </body>
