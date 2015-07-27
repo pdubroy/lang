@@ -1,0 +1,16 @@
+#!/usr/bin/env node
+
+var browserSync = require('browser-sync'),
+    path = require('path');
+
+var baseDir = path.normalize(__dirname + '/..');
+
+// Launch the Ohm visualizer in the default browser, reloading the page
+// whenever any of the source files change.
+browserSync({
+  files: [
+    path.join(baseDir, 'index.*')
+  ],
+  server: {baseDir: baseDir},
+  startPath: 'index.html'
+});

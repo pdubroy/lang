@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>A Programming Language</title>
+  <link rel="stylesheet" href="third_party/codemirror.css">
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+    }
+    .CodeMirror {
+      font-size: 16px;
+      height: 100%;
+      line-height: 1.35;
+    }
+    #editor {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <textarea id="editor"></textarea>
+  <script src="third_party/ohm.js"></script>
+  <script src="third_party/codemirror.js"></script>
+  <script src="third_party/underscore.js"></script>
+  <script type="text/ohm-js" src="es5.ohm"></script>
+  <script>
+    var lang = ohm.grammarsFromScriptElements().ES5;
+
+    var editor = CodeMirror.fromTextArea(document.querySelector('textarea'), {
+      lineNumbers: true
+    });
+    setEditorValueFromLocalStorage(editor, 'editorContents');
+
+    function setEditorValueFromLocalStorage(editor, key) {
+      var contents = localStorage.getItem(key);
+      if (contents != null) {
+        editor.setValue(contents);
+      }
+    }
+
+    function reparse() {
+      var result = lang.match(editor.getValue());
+      if (result.succeeded()) {
+        console.log('\u2713 ' + lang.name);
+      } else {
+        console.error(result.message);
+      }
+    }
+
+    editor.on('change', _.debounce(function(cm) {
+      var val = cm.getValue();
+      localStorage.setItem('editorContents', val);
+      reparse();
+    }, 300));
+    setTimeout(reparse, 10);
+  </script>
+</body>
+</html>
