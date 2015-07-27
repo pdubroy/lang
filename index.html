@@ -64,14 +64,15 @@
       }
     }
 
-    function reparse() {
+    function reparse(mutate) {
       var result = es5.match(editor.getValue());
       if (result.failed()) {
         console.error(result.message);
         return;
       }
+      console.log('ok');
       var node = semantics(result).getEditedNode();
-      if (node) {
+      if (node && mutate) {
         // Get all the numbers inside the block that just closed.
         var numbers = node.getNumbers();
 
@@ -83,9 +84,8 @@
       var val = cm.getValue();
       localStorage.setItem('editorContents', val);
       var text = change.text.join('');
-      if (text === '}' || text === ')') {
-        reparse();
-      }
+      var mutate = text === '}' || text === ')';
+      reparse(mutate);
     });
 
     setTimeout(reparse, 10);
