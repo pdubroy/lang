@@ -23,10 +23,12 @@
   <script src="third_party/ohm.js"></script>
   <script src="third_party/codemirror.js"></script>
   <script src="third_party/underscore.js"></script>
+  <script src="third_party/mode/javascript.js"></script>
   <script type="text/ohm-js" src="es5.ohm"></script>
   <script>
     var editor = CodeMirror.fromTextArea(document.querySelector('textarea'), {
-      lineNumbers: true
+      lineNumbers: true,
+      mode:  "javascript"
     });
     setEditorValueFromLocalStorage(editor, 'editorContents');
 
@@ -50,7 +52,7 @@
     // An operation that returns an Array of all the numericLiteral nodes.
     semantics.addOperation('getNumbers', {
       numericLiteral: function(_) {
-        return [this.interval.contents];
+        return [this];
       },
       _default: function(children) {
         return _.flatten(children.map(function(c) { return c.getNumbers(); }));
@@ -64,19 +66,67 @@
       }
     }
 
+    // Mutate number in one of a few different ways:
+    // - add 1
+    // - multiply by 10
+    // - zero out
+    function mutateNumber(n) {
+      var c = Math.floor(Math.random()*3);
+      console.log(c);
+      var result;
+      switch(c) {
+        case 0:
+          result = parseFloat(n) + 1;
+          break;
+        case 1:
+          result = parseFloat(n) * 10;
+          break;
+        case 2:
+          result = 0;
+          break;
+        default:
+          result = parseFloat(n);
+      }
+
+      return result;
+    }
+
+    function evalEditor() {
+      eval(editor.getValue());
+    }
+
     function reparse(mutate) {
       var result = es5.match(editor.getValue());
       if (result.failed()) {
-        console.error(result.message);
+        //console.error(result.message);
         return;
       }
-      console.log('ok');
+      //console.log('ok');
       var node = semantics(result).getEditedNode();
       if (node && mutate) {
-        // Get all the numbers inside the block that just closed.
-        var numbers = node.getNumbers();
-
         // Fun stuff goes here!
+
+        // Every once in a while, mutate a random number within this selected node
+        if(Math.floor(Math.random() * 3) === 0) { // 30% of the time
+
+          // Get all the numbers inside the block that just closed.
+          var numberNodes = node.getNumbers();
+          var len = numberNodes.length;
+          var targetNodeIdx = Math.floor(Math.random() * len);
+
+          // Get interval of the target number node
+          var startIdx = numberNodes[targetNodeIdx].interval.startIdx;
+          var endIdx = numberNodes[targetNodeIdx].interval.endIdx;
+
+          // Replace range within editor with a mutated number
+          var newNumber = mutateNumber(numberNodes[targetNodeIdx].interval.contents);
+          editor.replaceRange(
+            newNumber.toString(),
+            editor.posFromIndex(startIdx),
+            editor.posFromIndex(endIdx)
+          );
+        }
+
       }
     }
 
