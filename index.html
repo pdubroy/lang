@@ -54,6 +54,9 @@
       numericLiteral: function(_) {
         return [this];
       },
+//      RelationalExpression_gt: function(exp1, gt, exp2) {
+//
+//      },
       _default: function(children) {
         return _.flatten(children.map(function(c) { return c.getNumbers(); }));
       }
