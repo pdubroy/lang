@@ -72,7 +72,7 @@
     // - zero out
     function mutateNumber(n) {
       var c = Math.floor(Math.random()*3);
-      console.log(c);
+      //console.log(c);
       var result;
       switch(c) {
         case 0:
@@ -102,7 +102,8 @@
         return;
       }
       //console.log('ok');
-      var node = semantics(result).getEditedNode();
+      //var node = semantics(result).getEditedNode();
+      var node = semantics(result);
       if (node && mutate) {
         // Fun stuff goes here!
 
@@ -135,7 +136,8 @@
       localStorage.setItem('editorContents', val);
       var text = change.text.join('');
       var mutate = text === '}' || text === ')';
-      reparse(mutate);
+      //reparse(mutate);
+      reparse(true);
     });
 
     setTimeout(reparse, 10);
