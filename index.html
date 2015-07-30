@@ -30,7 +30,7 @@
 </head>
 <body>
   <textarea id="editor"></textarea>
-  <div id="dom">test<button>Test</button></div>
+  <div id="dom"> <!-- test<button>Test</button> --> </div>
   <script src="third_party/ohm.js"></script>
   <script src="third_party/codemirror.js"></script>
   <script src="third_party/underscore.js"></script>
@@ -86,7 +86,7 @@
     // - multiply by 10
     // - zero out
     function mutateNumber(n) {
-      var c = Math.floor(Math.random()*3);
+      var c = Math.floor(Math.random() * 4);
       //console.log(c);
       var result;
       switch(c) {
@@ -96,8 +96,14 @@
         case 1:
           result = parseFloat(n) * 10;
           break;
+        //case 2: // Don't zero numbers out, they lose all meaning
+        //  result = 0;
+        //  break;
         case 2:
-          result = 0;
+          result = parseFloat(n) / 10;
+          break;
+        case 3:
+          result = parseFloat(n) - 1;
           break;
         default:
           result = parseFloat(n);
@@ -123,7 +129,7 @@
         // Fun stuff goes here!
 
         // Every once in a while, mutate a random number within this selected node
-        if(Math.floor(Math.random() * 3) === 0) { // 30% of the time
+        if(Math.floor(Math.random() * 3) === 0) {
 
           // Get all the numbers inside the block that just closed.
           var numberNodes = node.getNumbers();
