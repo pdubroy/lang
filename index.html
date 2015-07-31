@@ -66,11 +66,36 @@
       numericLiteral: function(_) {
         return [this];
       },
-//      RelationalExpression_gt: function(exp1, gt, exp2) {
-//
-//      },
       _default: function(children) {
         return _.flatten(children.map(function(c) { return c.getNumbers(); }));
+      }
+    });
+
+    semantics.addOperation('getGreaterThans', {
+      RelationalExpression_gt: function(exp1, gt, exp2) {
+        return [gt];
+      },
+      _default: function(children) {
+        return _.flatten(children.map(function(c) { return c.getGreaterThans(); }));
+      }
+    });
+
+    semantics.addOperation('getLessThans', {
+      RelationalExpression_lt: function(exp1, lt, exp2) {
+        return [lt];
+      },
+      _default: function(children) {
+        return _.flatten(children.map(function(c) { return c.getLessThans(); }));
+      }
+    });
+
+    semantics.addOperation('getIfElses', {
+      IfStatement_ifThenElse: function(i, open, exp, close, statement1, el, statement2) {
+        return [[statement1, statement2]];
+      },
+      _default: function(children) {
+        return _.flatten(children.map(function(c) { return c.getIfElses(); }), true);
+        //return children.map(function(c) { return c.getIfElses(); });
       }
     });
 
@@ -86,7 +111,7 @@
     // - multiply by 10
     // - zero out
     function mutateNumber(n) {
-      var c = Math.floor(Math.random() * 4);
+      var c = Math.floor(Math.random() * 6);
       //console.log(c);
       var result;
       switch(c) {
@@ -104,6 +129,9 @@
           break;
         case 3:
           result = parseFloat(n) - 1;
+          break;
+        case 4:
+          result = parseFloat(n) * -1;
           break;
         default:
           result = parseFloat(n);
@@ -128,7 +156,93 @@
       if (node && mutate) {
         // Fun stuff goes here!
 
+        /////////////////////////////////////////////////////////////////////
+        // Every once in a while, reverse a greater than relational statement
+        /////////////////////////////////////////////////////////////////////
+        if(Math.floor(Math.random() * 3) === 0) {
+
+          // Get all the numbers inside the block that just closed.
+          var greaterThanNodes = node.getGreaterThans();
+          var len = greaterThanNodes.length;
+          var targetNodeIdx = Math.floor(Math.random() * len);
+
+          // Get interval of the target greater than node
+          var startIdx = greaterThanNodes[targetNodeIdx].interval.startIdx;
+          var endIdx = greaterThanNodes[targetNodeIdx].interval.endIdx;
+
+          // Replace range within editor with a less than
+          var newOperator = '<';
+          editor.replaceRange(
+            newOperator,
+            editor.posFromIndex(startIdx),
+            editor.posFromIndex(endIdx)
+          );
+
+        }
+
+        //////////////////////////////////////////////////////////////////
+        // Every once in a while, reverse a less than relational statement
+        //////////////////////////////////////////////////////////////////
+        if(Math.floor(Math.random() * 3) === 0) {
+
+          // Get all the numbers inside the block that just closed.
+          var lessThanNodes = node.getLessThans();
+          var len = lessThanNodes.length;
+          var targetNodeIdx = Math.floor(Math.random() * len);
+
+          // Get interval of the target less than node
+          var startIdx = lessThanNodes[targetNodeIdx].interval.startIdx;
+          var endIdx = lessThanNodes[targetNodeIdx].interval.endIdx;
+
+          // Replace range within editor with a greater than
+          var newOperator = '>';
+          editor.replaceRange(
+            newOperator,
+            editor.posFromIndex(startIdx),
+            editor.posFromIndex(endIdx)
+          );
+
+        }
+
+        /////////////////////////////////////////////////
+        // Every once in a while, reverse if/else clauses
+        /////////////////////////////////////////////////
+        if(Math.floor(Math.random() * 3) === 0) {
+
+          // Get all the numbers inside the block that just closed.
+          var ifElseNodes = node.getIfElses();
+          var len = ifElseNodes.length;
+          var targetNodeIdx = Math.floor(Math.random() * len);
+          //console.log(ifElseNodes[0][0].interval.contents);
+          //console.log(ifElseNodes[0][1].interval.contents);
+
+          // Get interval of the target clause node
+          var startIdx1 = ifElseNodes[targetNodeIdx][0].interval.startIdx + 1;
+          var endIdx1 = ifElseNodes[targetNodeIdx][0].interval.endIdx - 1;
+          var startIdx2 = ifElseNodes[targetNodeIdx][1].interval.startIdx + 1;
+          var endIdx2 = ifElseNodes[targetNodeIdx][1].interval.endIdx - 1;
+
+          // Replace range within editor with the other clause
+          var statement1 = ifElseNodes[targetNodeIdx][0].interval.contents;
+          var newStatement = '  ' + statement1.slice(1, statement1.length - 1);
+          editor.replaceRange(
+            newStatement,
+            editor.posFromIndex(startIdx2),
+            editor.posFromIndex(endIdx2)
+          );
+          var statement2 = ifElseNodes[targetNodeIdx][1].interval.contents;
+          var newStatement = '  ' + statement2.slice(1, statement2.length - 1);
+          editor.replaceRange(
+            newStatement,
+            editor.posFromIndex(startIdx1),
+            editor.posFromIndex(endIdx1)
+          );
+
+        }
+
+        //////////////////////////////////////////////////////////////////////////
         // Every once in a while, mutate a random number within this selected node
+        //////////////////////////////////////////////////////////////////////////
         if(Math.floor(Math.random() * 3) === 0) {
 
           // Get all the numbers inside the block that just closed.
@@ -156,7 +270,7 @@
       var val = cm.getValue();
       localStorage.setItem('editorContents', val);
       var text = change.text.join('');
-      var mutate = text === '}' || text === ')';
+      //var mutate = text === '}' || text === ')';
       //reparse(mutate);
       reparse(true);
     });
